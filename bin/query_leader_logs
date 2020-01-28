@@ -1,0 +1,70 @@
+#/bin/bash
+JCLI=jcli
+
+if [ $# -eq 0 ]; then
+    echo "Usage: "
+    echo "    query_leader_logs 44 all scheduled_at_time +01:00"
+    echo "    query_leader_logss EPOCH_NUMBER BLOCK_FILTER? PROPERTY? UTC_OFFSET?"
+    echo ""
+    echo "    EPOCH_NUMBER : Current epoch number (default 0)"
+    echo "    BLOCK_FILTER : One of [default 'mined' OR 'all' OR 'fork']"
+    echo "    PROPERTY?    : Optional json property filter. Could be directly 'block' for block mined hash."
+    echo "                   If filtered with property that ends with 'time' it sorts the outputs."
+    echo "    UTC_OFFSET?  : If property end with time defined an offset example UTC -01:00"
+    echo ""
+    echo "    * jcli, jq should be in your PATH."
+    exit 0
+fi
+
+EPOCH=${1:-0}
+COMMAND=${2:-mined}
+PROP=${3:-all}
+UTC_DIFF=${4:--01:00}
+
+LEADER_LOGS=$($JCLI rest v0 leaders logs get -h http://127.0.0.1:3100/api --output-format json)
+
+EPOCH_LEADER_LOGS=$(echo "$LEADER_LOGS" | jq -r ".[]|select(.scheduled_at_date|startswith(\"$EPOCH\"))")
+if [ $COMMAND == mined ] || [ $COMMAND == fork ]; then
+    CANDIDATE_BLOCKS=$(echo "$EPOCH_LEADER_LOGS" | jq "select(.status != \"Pending\")"|jq -s .)
+
+    MINED=""
+    REJECTED=""
+    while IFS=$"\n" read -r BLOCK; do
+        BLOCK_HASH=$(echo "$BLOCK" | jq -r ".status.Block"?.block?)
+        RES=$(~/bin/jcli rest v0 block $BLOCK_HASH next-id get -h http://127.0.0.1:3100/api 2>&1 >/dev/null | grep "Client Error: 404 Not Found" | wc -l)
+        if [ $RES -eq 0 ]; then
+             MINED="${MINED}${BLOCK}"
+        else
+             REJECTED="${REJECTED}${BLOCK}"
+        fi
+    done < <(echo "$CANDIDATE_BLOCKS" | jq -c '.[]')
+    MINED=$(echo $MINED|jq -s .)
+    REJECTED=$(echo $REJECTED|jq -s .)
+
+    if [ $COMMAND == mined ]; then
+        BLOCKS=$(echo $MINED)
+    elif [ $COMMAND == fork ]; then
+        BLOCKS=$(echo $REJECTED)
+    fi
+elif [ $COMMAND == pending ]; then
+    BLOCKS=$(echo "$EPOCH_LEADER_LOGS" | jq -r "select(.status == \"Pending\")"|jq -s .)
+elif [ $COMMAND == all ]; then
+    BLOCKS=$(echo "$EPOCH_LEADER_LOGS" | jq -s .)
+fi
+
+if [[ $COMMAND == mined || $COMMAND == fork ]] && [ $PROP == block ]; then
+    echo "$BLOCKS" | jq -r ".[].status.Block?.block?"
+elif [ $PROP == all ]; then
+    echo "$BLOCKS" | jq '.'
+else
+    BLOCKS_PROPERTIES=$(echo "$BLOCKS" | jq ".[].\"$PROP\"")
+
+    if [[ $PROP == *time ]]; then
+        echo "$BLOCKS_PROPERTIES" | sed "s/+00:00/$UTC_DIFF/" | sed  "s/\"//g" |
+        while read p; do
+            date -d $p +"%D %T"
+        done | sort | sed "s/CET//"
+    else
+        echo $BLOCKS_PROPERTIES
+    fi
+fi
