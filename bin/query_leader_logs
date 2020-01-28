@@ -31,7 +31,7 @@ if [ $COMMAND == mined ] || [ $COMMAND == fork ]; then
     REJECTED=""
     while IFS=$"\n" read -r BLOCK; do
         BLOCK_HASH=$(echo "$BLOCK" | jq -r ".status.Block"?.block?)
-        RES=$(~/bin/jcli rest v0 block $BLOCK_HASH next-id get -h http://127.0.0.1:3100/api 2>&1 >/dev/null | grep "Client Error: 404 Not Found" | wc -l)
+        RES=$($JCLI rest v0 block $BLOCK_HASH next-id get -h http://127.0.0.1:3100/api 2>&1 >/dev/null | grep "Client Error: 404 Not Found" | wc -l)
         if [ $RES -eq 0 ]; then
              MINED="${MINED}${BLOCK}"
         else
