@@ -57,6 +57,11 @@ if [[ $COMMAND == mined || $COMMAND == fork ]] && [ $PROP == block ]; then
 elif [ $PROP == all ]; then
     echo "$BLOCKS" | jq '.'
 else
+    if [ "$BLOCKS" == "[]" ]; then
+        echo ""
+        exit 0
+    fi
+
     BLOCKS_PROPERTIES=$(echo "$BLOCKS" | jq ".[].\"$PROP\"")
 
     if [[ $PROP == *time ]]; then
