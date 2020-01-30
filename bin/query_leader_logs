@@ -10,7 +10,7 @@ if [ $# -eq 0 ]; then
     echo "    BLOCK_FILTER : One of [default 'mined' OR 'all' OR 'fork']"
     echo "    PROPERTY?    : Optional json property filter. Could be directly 'block' for block mined hash."
     echo "                   If filtered with property that ends with 'time' it sorts the outputs."
-    echo "    UTC_OFFSET?  : If property end with time defined an offset example UTC -01:00"
+    echo "    UTC_OFFSET?  : If property ends with 'time' define an offset for date time example UTC -01:00"
     echo ""
     echo "    * jcli, jq should be in your PATH."
     exit 0
