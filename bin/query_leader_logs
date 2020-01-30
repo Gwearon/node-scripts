@@ -4,7 +4,7 @@ JCLI=jcli
 if [ $# -eq 0 ]; then
     echo "Usage: "
     echo "    query_leader_logs 44 all scheduled_at_time +01:00"
-    echo "    query_leader_logss EPOCH_NUMBER BLOCK_FILTER? PROPERTY? UTC_OFFSET?"
+    echo "    query_leader_logs EPOCH_NUMBER BLOCK_FILTER? PROPERTY? UTC_OFFSET?"
     echo ""
     echo "    EPOCH_NUMBER : Current epoch number (default 0)"
     echo "    BLOCK_FILTER : One of [default 'mined' OR 'all' OR 'fork']"
