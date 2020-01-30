@@ -1,0 +1,43 @@
+#!/bin/bash
+
+PORTS=~/config/nodes/*
+
+PORT=${1:-all}
+OUTPUT_FORMAT=${2:-json}
+PROP=${3:-all}
+
+if [ "$PORT" == "--help" ]; then
+    echo "Usage: "
+    echo "    stats all json version"
+    echo "    stats [PORT, all]? [json, yaml]? [stats prop]?"
+    echo ""
+    echo "    PORT : Port number jormungandr is running on"
+    echo ""
+    echo "    * config directory is $PORTS."
+    echo "    * jcli, jq should be in your PATH."
+    exit 0
+fi
+
+if [ "$PROP" != "all" ] && [ "$OUTPUT_FORMAT" != 'json' ]; then
+    echo "Not supported yet input: '$PROP' and '$OUTPUT_FORMAT'"
+    exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PORTS=~/config/nodes/*
+
+if [ "$PORT" == "all" ]; then
+    for PORT_PATH in $PORTS; do
+        echo $(basename $PORT_PATH)
+        $DIR/stats $(basename $PORT_PATH) $OUTPUT_FORMAT $PROP
+    done
+    exit 0
+fi
+
+STATS=$(jcli rest v0 node stats get --output-format $OUTPUT_FORMAT -h http://127.0.0.1:$PORT/api)
+
+if [ "$PROP" != "all" ]; then
+    echo $(echo $STATS | jq -r .$PROP)
+else
+    echo "$STATS"
+fi
