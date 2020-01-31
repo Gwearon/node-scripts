@@ -12,6 +12,7 @@ if [ $# -eq 0 ]; then
     echo "                   If filtered with property that ends with 'time' it sorts the outputs."
     echo "    UTC_OFFSET?  : If property ends with 'time' define an offset for date time example UTC -01:00"
     echo ""
+    echo "    * Assumed port 3100."
     echo "    * jcli, jq should be in your PATH."
     exit 0
 fi
